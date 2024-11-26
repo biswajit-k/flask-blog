@@ -1,0 +1,9 @@
+blog website
+
+- basic frontend ui(navbar, footer, main content - jinja)
+- create database and store all blogs there, display 5 latest blogs(later add pagination)
+- login/signup
+- 
+
+
+- setup nginx server(to serve static files and ...other production level advantages)
