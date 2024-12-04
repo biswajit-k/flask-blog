@@ -1,0 +1,1 @@
+flask --app flaskblog run --debug
