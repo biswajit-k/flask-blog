@@ -195,3 +195,92 @@ Below is the core concept behind it-
     * We could also manually create form like `<input type='...', name='...'>` but
     we need to make sure that mapping of input `name`, `type` matches with the `Field` of
     class
+
+    * Flask-wtf provides additional functionality of CSRF token
+
+---
+
+* In flask, `redirect(*<url>*)` and `url_for(*<route>*)`. So, we can use like - `redirect(url_for('home'))`. we should use `url_for` because URLs are much more likely to change than view function names, which are completely internal
+
+    also use it in html templates like `<a href="{{ url_for('index') }}">Home</a>`
+
+* to return a message for success/failure of some action, we can use flask `flash`. register a message
+using `flash()` function and use it once on calling `get_flash_message`
+
+```python
+from flask import flash, get_flashed_messages, redirect, url_for
+
+@app.route('/')
+def index():
+    return render_template('index.html', get_flash_messages=get_flashed_messages)
+
+
+@app.route('/login')
+def index():
+    ...
+    if login.success():
+        flash("login success!")
+        return redirect(url_for('index'))
+```
+
+and in html,
+
+```html
+...
+...
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <ul>
+            {% for message in messages %}
+            <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        {% endwith %}
+...
+...
+```
+
+* while create your own package, where you have `setup.py` for development, do `pip install -e .` within the package. This will install your package in editable mode(*creates symbolic link to package*)
+and when you change anything in your package, it is reflected. Without it, your package is installed
+directly in `site-packages` folder and you would have to change code there.
+
+* in python `sys.path` contains list of paths(*str*) where python searches for modules. So, when you
+have some module in a uncommon location, you can add it to path so python can find it and you could
+easily import. like `sys.path.append(...)` 
+
+## Alembic
+
+* Migration tool for sqlalchemy
+* Generates template for migration
+    * a folder inside application gets created called migration environment
+    * `env.py` file is created that contains main migration code
+    * Then we have a `versions/` folder where all are py script and each
+        apply a migration patch(*basically a script that applies new changes on top
+        of existing data*)
+    * command is - `alembic init <migration-environment-name>`
+    * there are templates available for migration environment which we can 
+    choose while initializing the env
+* general configration of alembic, logging, etc are stored in `alembic.ini`. We can tune it
+* Each migration script looks like-
+    ```python
+        revision = '1975ea83b712'
+        down_revision = None        # previous version it will go to on downgrade(linked list type of)
+        branch_labels = None
+
+        from alembic import op
+        import sqlalchemy as sa
+
+        def upgrade():
+            pass        # upgradation codd
+
+        def downgrade():
+            pass        # optional but preferred
+    ```
+
+* command is - `alembic upgrade head`, head upgrades to latest
+version. instead of head, we can provide specific revision_id also.
+* when ran for 1st time, a table called `alembic_version` is made which will hold
+ current version of db
+
+    
