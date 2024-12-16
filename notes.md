@@ -252,6 +252,9 @@ easily import. like `sys.path.append(...)`
 ## Alembic
 
 * Migration tool for sqlalchemy
+* Aim of migration is to automatically lift(*or possibly downgrade*) the database to the recent(*or the given*) version of
+what the schema in code represents
+* Migration applied to DDL. Which means, table and database creation, its schema
 * Generates template for migration
     * a folder inside application gets created called migration environment
     * `env.py` file is created that contains main migration code
@@ -283,4 +286,56 @@ version. instead of head, we can provide specific revision_id also.
 * when ran for 1st time, a table called `alembic_version` is made which will hold
  current version of db
 
+* **Steps**
+
+    * `alembic init <migration-env-name>`
+    * in the `alembic.ini` file change database uri
+    * write the model in `models.py` file
+    * in `env.py` file correct the import for model with the one you
+        created
+         ```python
+            from myapp.mymodel import Base
+            target_metadata = Base.metadata
+        ```
+    * run `alembic revision --autogenerate -m "create models"`
+        * This will create a migration file upon running which we will be
+            able to initialize our db with the tables
+    * to run the migration script do - `alembic upgrade head`
+
+* **How autogenerate migrations work?**
+
+    Alembic uses database uri present in `alembic.ini` to see current state of database
+    and the `Base.metadata` in `env.py` file to see the models of db.
     
+    It then generates the "obvious" steps for going from [database state → state of
+    models defined in models.py file]
+
+    Alembic doesn't detect table/column name change. It sees it as a drop table/column
+    then add a table/column
+
+* There is no need of migration if you want to lift the db from blank schema to the latest version.
+SQLAlchemy's `db.create_all()` does it out of the box. The need of Alembic or db migration in general
+is to lift/downgrade between versions.
+
+* **When to remove a migration script?**
+    * When no database environment is at that version and all have moved to a more recent state.
+
+    * To remove the old migration scripts, delete them, and set the left oldest file `down_version = None`
+
+* **Directive and Event Listeners**
+    * Directives are the inbuilt/user-defined functions for common DDL operations for migration work. Like-
+        `op.create_table()`, `op.add_column()`, etc.
+    * Event listener help calling custom function before/after a event. Like a trigger. For example, `before_indexing` etc.
+    * Using directives and hooks we can add modification in our migration logic.
+
+## Misc
+
+* In SQLalchemy Declarative Base contains metadata (`Base.metadata`), 
+which holds all the table and schema information for the ORM. 
+This metadata can be used to create or 
+manage the database schema programmatically.
+
+* SQLite don't provide full `ALTER` functionality
+    * it don't provide command for dropping column, changing its dtype, etc
+
+    * The way to do it is to create new table, copy content there and drop old one
