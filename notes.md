@@ -216,7 +216,7 @@ def index():
 
 
 @app.route('/login')
-def index():
+def login():
     ...
     if login.success():
         flash("login success!")
@@ -327,6 +327,67 @@ is to lift/downgrade between versions.
         `op.create_table()`, `op.add_column()`, etc.
     * Event listener help calling custom function before/after a event. Like a trigger. For example, `before_indexing` etc.
     * Using directives and hooks we can add modification in our migration logic.
+
+* **Useful when**
+    * make migration easy, don't have to manually update db. Just validate the script
+    and then call it, without even caring if the server is started/not
+    * helps in maintaining versions of db
+    * when we have dev. and prod. envs running, and we need to update db table structure, we just need
+    to validate the migration script and call it at both dev. and prod.
+
+## Flask-Migrage
+* uses alembic for migration. 
+* We need to configure our `app.config[db_uri]` and initialize a migrate object
+using `migrate = Migrate(app, db)`
+* to use flask migrate we need to use `flask db` prefix
+* commands
+    * `flask db init` - initialize migration folder and env.
+    * `flask db migrate` - create migration script for current db model state
+    * `flask db upgrage` - calls all scripts in correct order to reach recent state
+* Great thing about db migration is that you don't have to run your server for applying changes.
+The script takes the db uri and call the changes to be done.
+
+## Flask-sqlalchemy
+* `username: so.Mapped[str] = so.mapped_column(sa.String(64), index=True,
+                                                unique=True)` 
+
+    This way using type hints we do mapping. 
+* `timestamp: so.Mapped[datetime] = so.mapped_column(
+        index=True, default=lambda: datetime.now(timezone.utc))`
+
+    In above, default value is a function that returns the now datetime in utc
+
+* **Structuring db model for foreign key**
+
+    * Minimum requirement is - `  user_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey(User.id),
+                                               index=True)`
+    * to also add back refrence in both user and posts table.
+        * In post table, `author: so.Mapped[User] = so.relationship(back_populates='posts')`
+        * in user table, - `posts: so.WriteOnlyMapped['Post'] = so.relationship(
+        back_populates='author')`
+        * These variables will not be part of db tables. just for use in model and code. Internally they will
+        call join and where query.
+
+---
+* **application context**
+    Flask uses application context to store config/variables at global level
+    that can be accessed without the `app` object. This helps in preventing
+    circular import issues and is also convinient.
+
+    By default when running app through `flask run` the app context is automatically
+    pushed before every request is handled. However, when running from interactive
+    shell, we need to explicitly pass it using-
+
+    `>>> app.app_context().push()` or we can also do `flask shell` which automatically
+    does this.
+
+    To also load other objects in shell, we need to add below code in our FLASK_APP file-
+    ```python        
+        @app.shell_context_processor
+        def make_shell_context():
+            return {'sa': sa, 'so': so, 'db': db, 'User': User, 'Post': Post}
+    ```
+
 
 ## Misc
 
