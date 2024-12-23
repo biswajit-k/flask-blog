@@ -388,6 +388,111 @@ The script takes the db uri and call the changes to be done.
             return {'sa': sa, 'so': so, 'db': db, 'User': User, 'Post': Post}
     ```
 
+## Flask-login
+
+* Provides structure and flexibility in implementing login related functionalities in
+flask app
+* Basic idea is to ask developer to implement certain classes, functions and variables
+which will then be used in login flows
+
+    Like implement some functions in `User` class -
+    * `is_authenticated`
+    * `is_active`
+    * `is_anonymous` 
+    * `get_id` 
+
+* ```python
+    if not url_has_allowed_host_and_scheme(next, request.host):
+        return flask.abort(400)
+    ```
+    
+    Above function is used when redirect is done based on the `next` parameter present in url.
+    Like `https://my_website.com/login?next=dashboard`
+    
+    Here, it is possible that attacker can create malicious link where user is redirected to route
+    where a money transfer/details are sent. like `https://my_website.com/login?next=transfer&account=attacker`
+
+    This function implemented by developer checks if host is trusted and the next parameter is fine, then
+    proceed, else abort.
+
+* logged in user can be accessed in all html pages like-
+    ```python
+        {% if current_user.is_authenticated %}
+        Hi {{ current_user.name }}!
+        {% endif %}
+    ```
+
+* routes that require user login can be decorated with `@login_required` like below-
+    ```python
+    @app.route("/settings")
+    @login_required
+    def settings():
+        pass
+    ```
+    This will put `/settings` in `next` parameter
+     and check if user is logged in, if yes, then redirect it to `next`, else abort. To set
+     custom view other than abort, see next point. 
+
+* to set a custom view to which user will be re-directed when they are not logged in is-
+`login_manager.login_view = "<route-function-name>"`
+
+* we have a `LoginManager` class provided by flask-login which packs all the login functionality
+    To use it, we need to define some callback functions on it. Like-
+
+    * to load user from user_id
+        ```python
+        @login_manager.user_loader
+        def load_user(user_id):
+            return User.get(user_id)
+        ```
+    * to load user from the api_key or auth token, we will use the request object
+        ```python
+        @login_manager.request_loader
+        def load_user_from_request(request):
+
+            # first, try to login using the api_key url arg
+            api_key = request.args.get('api_key')
+            if api_key:
+                user = User.query.filter_by(api_key=api_key).first()
+                if user:
+                    return user
+
+            # next, try to login using Basic Auth
+            api_key = request.headers.get('Authorization')
+            if api_key:
+                api_key = api_key.replace('Basic ', '', 1)
+                try:
+                    api_key = base64.b64decode(api_key)
+                except TypeError:
+                    pass
+                user = User.query.filter_by(api_key=api_key).first()
+                if user:
+                    return user
+
+            # finally, return None if both methods did not login the user
+            return None
+        ```
+    * to modify default behaviour. For example instead of redirecting to login page
+    if user is not authorized.
+
+        ```python
+        @login_manager.unauthorized_handler
+        def unauthorized():
+            # do stuff
+            return a_response
+        ```
+* for session cookie protection, flask-login internally stores the hash of (user IP + user agent)
+inside the session itself. This helps in ensuring that access happens from the same network(*using IP*)
+and also from the same browser/client app(*using user agent*)
+
+    It offers three modes `none`, `basic`(*default*), `strong`
+
+    * `basic` - checks hash on session state change requests(like login/logout). Not much useful
+    * `strong` - checks session on every request. Should be used.
+
+        done by - `login_manager.session_protection = "strong"`
+
+
 
 ## Misc
 

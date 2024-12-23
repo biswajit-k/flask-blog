@@ -36,9 +36,10 @@
                 <a class="nav-link" href="{{ url_for('create') }}">Create</a>
               </li>
             </ul>
-            <form class="d-flex" role="search", action="{{ url_for('login') }}">
+            {% set login_logout_value = 'login' if user.is_authenticated else 'logout' %}
+            <form class="d-flex" role="search", action="{{ url_for(login_logout_value) }}">
               <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-              <button class="btn btn-outline-info" type="submit">login</button>
+              <button class="btn btn-outline-info" type="submit">login_logout_value</button>
             </form>
           </div>
         </div>
