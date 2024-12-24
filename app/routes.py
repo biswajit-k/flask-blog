@@ -1,5 +1,6 @@
-from flask import render_template, flash, redirect, url_for, get_flashed_messages
+from flask import render_template, flash, redirect, url_for, get_flashed_messages, request
 from flask_login import current_user, login_user, logout_user
+from urllib.parse import urlsplit
 import sqlalchemy as sa
 from app import app, db
 from app.forms import LoginForm
@@ -50,7 +51,10 @@ def login():
             flash('Invalid username or password')
             return redirect(url_for('login'))
         login_user(user, remember=form.remember_me.data)
-        return redirect(url_for('home'))
+        next = request.args.get('next')
+        if not next or urlsplit(next).netloc != '':         # have a url_has_allowed_host_and_scheme(next, request.host)
+            return redirect(url_for('home'))
+        return redirect(next)
     return render_template('login.html', form=form, title="Login")
 
 

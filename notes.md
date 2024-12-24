@@ -43,6 +43,8 @@ Had the user been using other ways to access resources like cURL, etc then these
 blocking other site from reading response, etc won't be applied and user's data is compromised.
 * Therefore security rules like same origin policy are only useful if user is accessing site using
 their secure browser. 
+* for any request that changes user's data, use CSRF token. This ensure that any request originated from
+different source is not served. Only request originated from app's UI is considered authentic.
 
 * We at server standpoint should know the security vulnerabilities and practices to mitigate them.
 Going through OWASP guide for top security threats and setting system to mitage them is essential.
@@ -492,6 +494,27 @@ and also from the same browser/client app(*using user agent*)
 
         done by - `login_manager.session_protection = "strong"`
 
+* **protected routes**
+
+    * set the login view
+    ```python
+        login = LoginManager(app)
+        login.login_view = 'login'  # set value to function that is used to show login page
+    ```
+
+    * define the route with login required
+    ```python
+        @app.route('/dashboard')
+        @login_required             # it will ensure that login user are shown this page, else re-direct to login page first
+        def dashboard():
+            ...
+            ...
+    ```
+
+    This also sets the `next` parameter in request like - `/login?next=/dashboard`. This is useful as we will
+    check this parameter to redirect the user to dashboard view after login directly.
+
+    * 
 
 
 ## Misc
