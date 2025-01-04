@@ -1,3 +1,5 @@
+# Flask Blog Notes
+
 * create a folder `app` and make it a package by adding a `__init__.py` file and add the initial flask code there
 * `app = Flask(__name__)` here, __name__ means the package name(if its __init__ file then means folder name, else its the file name(_also called the module_)).
 
