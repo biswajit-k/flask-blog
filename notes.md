@@ -243,6 +243,8 @@ and in html,
 ...
 ```
 
+* To create custom validators, create a member function in form like `validate_<field_name>`
+
 * while create your own package, where you have `setup.py` for development, do `pip install -e .` within the package. This will install your package in editable mode(*creates symbolic link to package*)
 and when you change anything in your package, it is reflected. Without it, your package is installed
 directly in `site-packages` folder and you would have to change code there.
@@ -516,6 +518,101 @@ and also from the same browser/client app(*using user agent*)
 
     * 
 
+---
+
+* to include a jinja component in between-
+    ```html
+        {% include '_post.html' %}
+    ```
+
+    I name underscore to distinguish component templates from pages
+
+* to run a function before each route-
+    ```python
+        @before_request
+        def before_request():
+            pass
+    ```
+
+* in flask debug mode, the error we see on browser, we can expand any of the stack trace and see
+the value of variables inside them
+
+* **error handlers**
+    create a `errors.py` file and create custom error pages-
+    ```python
+    @app.errorhandler(500)
+    def internal_error(error):
+        db.session.rollback()
+        return render_template('500.html'), 500
+    ```
+
+    * We can send errors to email apart from logging like `from logging.handlers import SMTPHandler`
+
+    * To run a local SMTP server to test email functionality-
+        
+        * `pip install aiosmtpd`
+        * start local server
+
+            `aiosmtpd -n -c aiosmtpd.handlers.Debugging -l localhost:8025`
+
+    * To log to a file-
+        
+        * `from logging.handlers import RotatingFileHandler`
+
+        * below is code-
+            ```python
+            if not app.debug:
+            # ...
+
+            if not os.path.exists('logs'):
+                os.mkdir('logs')
+            file_handler = RotatingFileHandler('logs/microblog.log', maxBytes=10240,
+                                            backupCount=10)
+            file_handler.setFormatter(logging.Formatter(
+                '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'))
+            file_handler.setLevel(logging.INFO)
+            app.logger.addHandler(file_handler)
+
+            app.logger.setLevel(logging.INFO)
+            app.logger.info('Microblog startup')
+            ```
+        * The RotatingFileHandler class is nice because it rotates the logs, ensuring that the log files do not grow too large when the application runs for a long time. In this case I'm limiting the size of the log file to 10KB, and I'm keeping the last ten log files as backup.
+
+* **database relations**
+
+    * one-to-many is done by foreign key
+    * many-to-many is done by creating a extra association table
+    * one-to-one is like one-to-many + unique constraing on foreign key
+
+    * to create a table without class model-
+        ```python
+        followers = sa.Table(
+        'followers',
+        db.metadata,
+        sa.Column('follower_id', sa.Integer, sa.ForeignKey('user.id'),
+                primary_key=True),
+        sa.Column('followed_id', sa.Integer, sa.ForeignKey('user.id'),
+                primary_key=True)
+        )
+        ```
+    * Self association table-
+        ```python
+        class User(UserMixin, db.Model):
+        # ...
+        following: so.WriteOnlyMapped['User'] = so.relationship(
+            secondary=followers, primaryjoin=(followers.c.follower_id == id),
+            secondaryjoin=(followers.c.followed_id == id),
+            back_populates='followers')
+        followers: so.WriteOnlyMapped['User'] = so.relationship(
+            secondary=followers, primaryjoin=(followers.c.followed_id == id),
+            secondaryjoin=(followers.c.follower_id == id),
+            back_populates='following')
+        ```
+
+        We can add/remove follower of a user by `user1.following.add(user2)`, `user1.following.remove(user2)`
+
+* separating business logic from view functions to model functions **makes unit testing easier**. Like, we can
+create a function inside `User` model to add/remove follower instead of directly calling `user.following.add(...)`
 
 ## Misc
 
@@ -528,3 +625,13 @@ manage the database schema programmatically.
     * it don't provide command for dropping column, changing its dtype, etc
 
     * The way to do it is to create new table, copy content there and drop old one
+
+* md5 takes a byte type and hashes it. Below are two ways to convert string to byte-
+
+    ```python
+        b_hello = b'hello'  # ascii encoding
+        bb_hello = 'hello'.encode('utf-8')  # UTF-8 encoding
+    ```
+
+    ascii encoding can encode 128 character types, special characters can't be encoded in this scheme.
+    Here, UTF-8 encoding would be required

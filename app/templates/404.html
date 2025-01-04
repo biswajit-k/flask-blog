@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 
-{% block body %}
-<div class="text-center" style="font-size: 24px;">
-    Page not found. Please go to <a href="{{url_for('home')}}">home</a>.
-</div>
+{% block content %}
+    <h1>File Not Found</h1>
+    <p><a href="{{ url_for('home') }}">Back</a></p>
 {% endblock %}

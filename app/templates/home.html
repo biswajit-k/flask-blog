@@ -4,14 +4,14 @@
 
 {% block body %}
 <h3>
-    Welcome Back <strong>{{ user.username }}!</strong>
+    Welcome Back <strong>{{ current_user.username }}!</strong>
 </h3>
 <div class="mt-5">Posts-</div>
 {% for post in posts %}
     <div class="card mb-3">
         <div class="card-body">
-            <h4 class="card-title">{{ post.title }}</h4>
-            <p class="card-text">{{ post.content }}</p>
+            <p class="card-text">{{ post.author }} says:</p>
+            <p class="card-text">{{ post.body }}</p>
         </div>
     </div>
 {% endfor %}
