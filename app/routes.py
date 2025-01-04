@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from flask import render_template, flash, redirect, url_for, get_flashed_messages, request
 from flask_login import current_user, login_user, logout_user, login_required
 from urllib.parse import urlsplit
@@ -33,6 +34,15 @@ from app.models import User, Post
 def inject_user():
     return {'current_user': current_user}
 
+@app.before_request
+def before_request():
+    if current_user.is_authenticated:
+        current_user.last_seen = datetime.now(timezone.utc)
+        db.session.commit()
+
+
+
+####### main routes
 @app.route('/')
 @login_required
 def home():
@@ -95,7 +105,6 @@ def profile(username):
         {'author': user, 'body': 'Test post #1'},
         {'author': user, 'body': 'Test post #2'}
     ]
-    print(user)
     return render_template('profile.html', user=user, posts=posts)
 
 
